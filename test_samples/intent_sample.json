@@ -1,0 +1,46 @@
+{
+  "scenario_metadata": {
+    "intent_summary": "验证项目存在时获取分支列表的正确性",
+    "complexity": "medium"
+  },
+  "bdd_flow": {
+    "given": [
+      {
+        "step_id": "G1",
+        "description": "确保目标项目存在",
+        "action_type": "QUERY_OR_CREATE"
+      },
+      {
+        "step_id": "G2",
+        "description": "在该项目中预先创建一个分支",
+        "action_type": "CREATE"
+      }
+    ],
+    "when": [
+      {
+        "step_id": "W1",
+        "description": "请求获取该项目的全量分支列表",
+        "action_type": "FETCH_LIST"
+      }
+    ],
+    "then": [
+      {
+        "step_id": "T1",
+        "description": "接口返回状态码应为 200",
+        "check_type": "EQUALS"
+      },
+      {
+        "step_id": "T2",
+        "description": "返回的列表中应包含新创建的分支名称",
+        "check_type": "CONTAINS"
+      }
+    ],
+    "cleanup": [
+      {
+        "step_id": "C1",
+        "description": "删除测试过程中创建的临时分支",
+        "action_type": "DELETE"
+      }
+    ]
+  }
+}

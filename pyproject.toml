@@ -1,0 +1,17 @@
+[project]
+name = "aw-librarian-agent"
+version = "0.1.0"
+description = "LangGraph-based AW librarian agent"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+  "langgraph>=0.2.0",
+  "langchain-core>=0.3.0",
+  "langchain-openai>=0.2.0",
+  "httpx>=0.27.0",
+  "pydantic>=2.6.0",
+]
+
+[tool.uv]
+package = true
