@@ -13,7 +13,7 @@ uv sync
 2. 运行
 
 ```bash
-uv run python run_librarian.py
+uv run python .\src\run_librarian.py
 ```
 
 运行后会在终端提示：
