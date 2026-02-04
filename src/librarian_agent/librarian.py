@@ -164,6 +164,7 @@ def load_aw_library(path_str: str) -> list[AwRecord]:
         files = [path]
     elif path.is_dir():
         files = list(path.rglob("*.md"))
+    print(f"[Librarian] 发现 AW 文件数: {len(files)}", flush=True)
     records: list[AwRecord] = []
     for file in files:
         text = file.read_text(encoding="utf-8")
@@ -174,6 +175,7 @@ def load_aw_library(path_str: str) -> list[AwRecord]:
             record = _parse_aw_text(doc, str(file))
             if record:
                 records.append(record)
+    print(f"[Librarian] 解析 AW 记录数: {len(records)}", flush=True)
     return records
 
 
@@ -271,6 +273,10 @@ def _call_llm(llm: ChatOpenAI, messages: list) -> dict | None:
     except json.JSONDecodeError:
         match = re.search(r"\{[\s\S]*\}", text)
         if not match:
+            return None
+        try:
+            return json.loads(match.group(0))
+        except json.JSONDecodeError:
             return None
 
 
@@ -410,8 +416,11 @@ def _iterate_steps(intent_input: Any) -> list[dict]:
 def build_candidates(state: State, llm: ChatOpenAI, aw_records: list[AwRecord], aw_path: str, top_n: int) -> dict:
     intent = state.get("intent", {})
     steps = _iterate_steps(intent)
+    print(f"[Librarian] 同步模式步骤数: {len(steps)}", flush=True)
     results: list[dict] = []
-    for step in steps:
+    for idx, step in enumerate(steps, start=1):
+        desc = step.get("description", "")
+        print(f"[Librarian] 处理步骤 {idx}/{len(steps)}: {desc[:60]}", flush=True)
         query = step.get("description", "")
         prefiltered = _prefilter_records(aw_records, query, aw_path)
         messages = _build_prompt(step, prefiltered, top_n)
@@ -433,18 +442,26 @@ async def build_candidates_async(
 ) -> dict:
     intent = state.get("intent", {})
     steps = _iterate_steps(intent)
+    print(
+        f"[Librarian] 异步模式步骤数: {len(steps)} (并发={max(1, max_concurrency)})",
+        flush=True,
+    )
     results: list[dict] = []
     semaphore = asyncio.Semaphore(max(1, max_concurrency))
 
     async def _process_step(step: dict) -> dict:
         async with semaphore:
+            desc = step.get("description", "")
+            print(f"[Librarian] 开始处理: {desc[:60]}", flush=True)
             query = step.get("description", "")
             prefiltered = _prefilter_records(aw_records, query, aw_path)
             messages = _build_prompt(step, prefiltered, top_n)
             llm_result = await _call_llm_async(llm, messages)
             if not llm_result:
                 llm_result = _fallback_candidates(step, prefiltered, top_n)
-            return _ensure_top_n(llm_result, prefiltered, step, top_n)
+            result = _ensure_top_n(llm_result, prefiltered, step, top_n)
+            print(f"[Librarian] 完成处理: {desc[:60]}", flush=True)
+            return result
 
     if steps:
         results = list(await asyncio.gather(*[_process_step(step) for step in steps]))
@@ -483,9 +500,11 @@ def make_graph_async(
 
 def run_librarian(intent: dict, aw_path: str, llm: ChatOpenAI, top_n: int = 3) -> list[dict]:
     aw_records = load_aw_library(aw_path)
+    print("[Librarian] 构建同步图", flush=True)
     graph = make_graph(llm, aw_records, aw_path, top_n)
     app = graph.compile()
     state: State = {"intent": intent, "candidates": [], "result": {}}
+    print("[Librarian] 执行同步图", flush=True)
     output = app.invoke(state)
     return output.get("candidates", [])
 
@@ -498,8 +517,10 @@ async def run_librarian_async(
     max_concurrency: int = 4,
 ) -> list[dict]:
     aw_records = load_aw_library(aw_path)
+    print("[Librarian] 构建异步图", flush=True)
     graph = make_graph_async(llm, aw_records, aw_path, top_n, max_concurrency)
     app = graph.compile()
     state: State = {"intent": intent, "candidates": [], "result": {}}
+    print("[Librarian] 执行异步图", flush=True)
     output = await app.ainvoke(state)
     return output.get("candidates", [])

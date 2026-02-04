@@ -17,7 +17,7 @@ def _prompt(text: str, default: str | None = None) -> str:
 
 
 def main() -> None:
-    print("=== The Librarian (LangGraph) ===")
+    print("=== The Librarian (LangGraph) ===", flush=True)
     api_base = _prompt(
         "请输入 LLM API Base",
         "https://dashscope.aliyuncs.com/compatible-mode/v1",
@@ -25,7 +25,6 @@ def main() -> None:
     api_key = _prompt("请输入 LLM API Key")
     model = _prompt("请输入 LLM Model", "deepseek-r1")
     disable_proxy = _prompt("是否禁用系统代理 (y/N)", "N").lower().startswith("y")
-
     aw_path = _prompt("请输入 AW 库路径（文件或目录）", str(Path(".").resolve()))
     intent_path = _prompt("请输入 intent JSON 路径")
     top_n_text = _prompt("请输入 Top-N", "3")
@@ -43,6 +42,7 @@ def main() -> None:
     except ValueError:
         max_concurrency = 4
 
+    print("\n=== 读取 intent JSON ===", flush=True)
     intent = json.loads(Path(intent_path).read_text(encoding="utf-8"))
 
     http_client = httpx.Client(proxies={}) if disable_proxy else None
@@ -55,6 +55,7 @@ def main() -> None:
         http_client=http_client,
     )
 
+    print("\n=== 开始构建候选 ===", flush=True)
     if use_async:
         results = asyncio.run(
             run_librarian_async(
