@@ -26,7 +26,7 @@ except ImportError:
 # ==========================================
 
 # DeepSeek API 配置
-DEEPSEEK_API_KEY = "sk-d52325fb3fcf4c3fa2dae3875312e9ee"
+DEEPSEEK_API_KEY = "sk--"
 DEEPSEEK_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 client = ChatOpenAI(
