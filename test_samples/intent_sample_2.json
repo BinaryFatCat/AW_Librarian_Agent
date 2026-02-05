@@ -1,0 +1,46 @@
+{
+  "scenario_metadata": {
+    "intent_summary": "验证删除项目与分支的清理流程",
+    "complexity": "medium"
+  },
+  "bdd_flow": {
+    "given": [
+      {
+        "step_id": "G1",
+        "description": "确保目标项目存在且包含一个待删除的分支",
+        "action_type": "QUERY_OR_CREATE"
+      }
+    ],
+    "when": [
+      {
+        "step_id": "W1",
+        "description": "删除该项目下的指定分支",
+        "action_type": "DELETE"
+      },
+      {
+        "step_id": "W2",
+        "description": "删除该项目本身",
+        "action_type": "DELETE"
+      }
+    ],
+    "then": [
+      {
+        "step_id": "T1",
+        "description": "分支删除接口返回成功状态",
+        "check_type": "EQUALS"
+      },
+      {
+        "step_id": "T2",
+        "description": "项目删除接口返回成功状态",
+        "check_type": "EQUALS"
+      }
+    ],
+    "cleanup": [
+      {
+        "step_id": "C1",
+        "description": "若删除失败则强制清理项目",
+        "action_type": "DELETE"
+      }
+    ]
+  }
+}
